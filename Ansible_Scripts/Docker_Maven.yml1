@@ -1,0 +1,66 @@
+---
+- name: Install Docker and Maven
+  hosts: Jenkins_Docker_Prometheus  # Change this to your inventory group
+  become: yes
+  tasks:
+    - name: Update APT package index
+      apt:
+        update_cache: yes
+
+    - name: Install required packages for APT over HTTPS
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Add Docker’s official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+        validate_certs: yes
+
+    - name: Set up the Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+        state: present
+
+    - name: Update APT package index after adding Docker repository
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started    
+
+    - name: Install Maven
+      apt:
+        name: maven
+        state: present
+
+    - name: Add user jenkins to the Docker group
+      user:
+        name: "jenkins"
+        groups: docker
+        append: yes
+
+    - name: Grant jenkins user passwordless sudo privileges
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        line: "jenkins ALL=(ALL:ALL) NOPASSWD: ALL"
+        validate: "visudo -cf %s"
+
+    - name: Restart Docker service
+      service:
+        name: docker
+        state: restarted

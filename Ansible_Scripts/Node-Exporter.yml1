@@ -1,0 +1,85 @@
+---
+- name: Install Node Exporter
+  hosts: Jenkins_Docker_Prometheus
+  become: true
+  tasks:
+
+    - name: Install required packages
+      apt:
+        name: 
+          - wget
+          - tar
+        state: present
+        update_cache: yes
+
+    - name: Download Node Exporter tarball
+      get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+        dest: /tmp/node_exporter-1.8.2.linux-amd64.tar.gz
+
+    - name: Extract Node Exporter tarball
+      ansible.builtin.unarchive:
+        src: /tmp/node_exporter-1.8.2.linux-amd64.tar.gz
+        dest: /tmp/
+        remote_src: yes
+        creates: /tmp/node_exporter-1.8.2.linux-amd64
+
+    - name: Ensure /usr/local/bin directory exists
+      file:
+        path: /usr/local/bin
+        state: directory
+        mode: '0755'
+
+    - name: Move Node Exporter binary
+      copy:
+        src: /tmp/node_exporter-1.8.2.linux-amd64/node_exporter
+        dest: /usr/local/bin/node_exporter
+        mode: '0755'
+        owner: root
+        group: root
+        remote_src: yes
+
+    - name: Create node_exporter user
+      user:
+        name: node_exporter
+        shell: /bin/false
+        system: yes
+
+    - name: Create Node Exporter service file
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network.target
+          
+          [Service]
+          User=node_exporter
+          Group=node_exporter
+          Type=simple
+          ExecStart=/usr/local/bin/node_exporter
+          Restart=on-failure
+          
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd to apply changes
+      systemd:
+        daemon_reload: yes
+
+    - name: Start Node Exporter service
+      systemd:
+        name: node_exporter
+        state: started
+        enabled: yes
+
+    - name: Check Node Exporter service status
+      systemd:
+        name: node_exporter
+        state: started
+        enabled: yes
+      register: node_exporter_status
+
+    - name: Show Node Exporter service status
+      debug:
+        var: node_exporter_status

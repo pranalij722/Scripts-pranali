@@ -1,0 +1,75 @@
+- name: Install Grafana Enterprise
+  hosts: Grafana
+  become: true
+  tasks:
+
+    - name: Install dependencies
+      apt:
+        name: wget
+        state: present
+        update_cache: yes
+
+    - name: Download Grafana Enterprise tarball
+      get_url:
+        url: https://dl.grafana.com/enterprise/release/grafana-enterprise-11.2.2.linux-amd64.tar.gz
+        dest: /tmp/grafana-enterprise-11.2.2.linux-amd64.tar.gz
+
+    - name: Check contents of the tarball
+      command: tar -tf /tmp/grafana-enterprise-11.2.2.linux-amd64.tar.gz
+      register: tar_contents
+
+    - name: Debug tarball contents
+      debug:
+        msg: "{{ tar_contents.stdout_lines }}"
+
+    - name: Ensure /opt directory has correct permissions
+      ansible.builtin.file:
+        path: /opt
+        state: directory
+        mode: '0755'
+
+    - name: Extract Grafana tarball to /opt
+      ansible.builtin.unarchive:
+        src: /tmp/grafana-enterprise-11.2.2.linux-amd64.tar.gz
+        dest: /opt/
+        remote_src: yes
+      become: true
+      register: extract_to_opt
+
+    - name: Debug extraction status
+      debug:
+        msg: "Extraction to /opt result: {{ extract_to_opt }}"
+
+    - name: List contents of /opt after extraction
+      command: ls -1 /opt
+      register: opt_dir_contents
+
+    - name: Debug /opt directory contents
+      debug:
+        msg: "{{ opt_dir_contents.stdout_lines }}"
+
+    - name: Set Grafana directory variable based on extracted contents
+      set_fact:
+        grafana_dir: "{{ opt_dir_contents.stdout_lines | select('search', '^grafana-v') | list | first }}"
+
+    - name: Debug extracted Grafana directory
+      debug:
+        msg: "Grafana directory is {{ grafana_dir }}"
+
+    - name: Verify Grafana binary exists
+      stat:
+        path: "/opt/{{ grafana_dir }}/bin/grafana-server"
+      register: grafana_bin_check
+
+    - name: Fail if Grafana binary is missing
+      fail:
+        msg: "Grafana binary does not exist in /opt/{{ grafana_dir }}/bin/grafana-server."
+      when: not grafana_bin_check.stat.exists
+
+    - name: Create symbolic link for easier access (optional)
+      ansible.builtin.file:
+        src: "/opt/{{ grafana_dir }}"
+        dest: /opt/grafana
+        state: link
+        force: yes
+      when: grafana_bin_check.stat.exists

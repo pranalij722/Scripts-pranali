@@ -1,0 +1,61 @@
+---
+- name: Install Prometheus on Ubuntu 24.04
+  hosts: Jenkins_Docker_Prometheus
+  become: yes
+  tasks:
+
+    - name: Install required packages
+      apt:
+        name: 
+          - wget
+          - tar
+        state: present
+
+    - name: Download Prometheus
+      ansible.builtin.get_url:
+        url: "https://github.com/prometheus/prometheus/releases/download/v2.53.2/prometheus-2.53.2.linux-amd64.tar.gz"
+        dest: "/tmp/prometheus-2.53.2.linux-amd64.tar.gz"
+
+    - name: Extract Prometheus
+      ansible.builtin.unarchive:
+        src: "/tmp/prometheus-2.53.2.linux-amd64.tar.gz"
+        dest: "/opt/"
+        remote_src: yes
+
+    - name: Ensure /etc/docker/ directory exists
+      ansible.builtin.file:
+        path: "/etc/docker/"
+        state: directory
+        mode: '0755'
+
+    - name: Create Docker daemon configuration file if not exists
+      ansible.builtin.file:
+        path: "/etc/docker/daemon.json"
+        state: touch
+
+    - name: Add metrics configuration to Docker daemon.json
+      ansible.builtin.copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+              "metrics-addr" : "0.0.0.0:9323",
+              "experimental" : true
+          }
+
+    - name: Restart Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: restarted
+
+    - name: Backup existing Prometheus configuration
+      ansible.builtin.copy:
+        src: /opt/prometheus-2.53.2.linux-amd64/prometheus.yml
+        dest: /opt/prometheus-2.53.2.linux-amd64/prometheus.yml.bak
+        remote_src: yes
+    - name: Ensure node-exporter job is added to Prometheus configuration with 10 spaces
+      lineinfile:
+        path: /opt/prometheus-2.53.2.linux-amd64/prometheus.yml
+        insertbefore: "^\\s+- job_name: \"prometheus\""
+        line: "  - job_name: \"node-exporter\"\n    static_configs:\n      - targets: [\"localhost:9100\"]"
+        state: present
+        create: yes
