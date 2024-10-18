@@ -1,15 +1,15 @@
 # Ansible Server EC2 Instance
-resource "aws_instance" "Banking_Project_Ansible_Instance" {
-  ami           = "ami-0522ab6e1ddcc7055"  # Replace with latest Ubuntu 24.04 AMI ID
+resource "aws_instance" "Final_Banking_Project_Ansible_Instance" {
+  ami           = "ami-0ea3c35c5c3284d82"  # Replace with latest Ubuntu 24.04 AMI ID
   instance_type = "t2.medium"
-  subnet_id     = aws_subnet.Banking_Project_Subnet.id
+  subnet_id     = aws_subnet.Final_Banking_Project_Subnet.id
 
   associate_public_ip_address = true
 
-  vpc_security_group_ids = [aws_security_group.Banking_Project_SG.id]
+  vpc_security_group_ids = [aws_security_group.Final_Banking_Project_SG.id]
 
   tags = {
-    Name = "Ansible-Server"
+    Name = "Ansible-Master"
   }
 
   # User Data Script
@@ -37,9 +37,9 @@ resource "aws_instance" "Banking_Project_Ansible_Instance" {
     # Append Ansible hosts file with the private IPs of the other instances
     cat <<EOT >> /etc/ansible/hosts
     [Jenkins_Docker_Prometheus]
-    ${aws_instance.Banking_Project_DJP_Instance[0].private_ip}
+    ${aws_instance.Final_Banking_Project_DJP_Instance[0].private_ip}
     [Grafana]
-    ${aws_instance.Banking_Project_DJP_Instance[1].private_ip}
+    ${aws_instance.Final_Banking_Project_DJP_Instance[1].private_ip}
     EOT
 
     chmod 644 /etc/ansible/hosts
