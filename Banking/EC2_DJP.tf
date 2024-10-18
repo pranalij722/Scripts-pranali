@@ -1,12 +1,12 @@
-resource "aws_instance" "Banking_Project_DJP_Instance" {
+resource "aws_instance" "Final_Banking_Project_DJP_Instance" {
   count         = 2
-  ami           = "ami-0522ab6e1ddcc7055"  # Replace with the latest Ubuntu 24.04 AMI ID
+  ami           = "ami-0ea3c35c5c3284d82"  # Replace with the latest Ubuntu 24.04 AMI ID
   instance_type = "t2.medium"
-  subnet_id     = aws_subnet.Banking_Project_Subnet.id
+  subnet_id     = aws_subnet.Final_Banking_Project_Subnet.id
 
   associate_public_ip_address = true
 
-  vpc_security_group_ids = [aws_security_group.Banking_Project_SG.id]
+  vpc_security_group_ids = [aws_security_group.Final_Banking_Project_SG.id]
 
   tags = {
     Name = count.index == 0 ? "Jenkins_Docker_Prometheus" : "Grafana"
