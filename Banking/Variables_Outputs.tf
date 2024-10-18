@@ -1,7 +1,7 @@
 # Local Variables for IP addresses
 locals {
-  instance_public_ips  = aws_instance.Banking_Project_DJP_Instance[*].public_ip
-  instance_private_ips = aws_instance.Banking_Project_DJP_Instance[*].private_ip
+  instance_public_ips  = aws_instance.Final_Banking_Project_DJP_Instance[*].public_ip
+  instance_private_ips = aws_instance.Final_Banking_Project_DJP_Instance[*].private_ip
 }
 
 # Outputs for specific instance IPs
