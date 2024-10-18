@@ -1,6 +1,6 @@
 # Create Security Group
-resource "aws_security_group" "Banking_Project_SG" {
-  vpc_id = aws_vpc.Banking_Project_VPC.id
+resource "aws_security_group" "Final_Banking_Project_SG" {
+  vpc_id = aws_vpc.Final_Banking_Project_VPC.id
   name   = "allow_ssh_http"
 
   ingress {
@@ -59,6 +59,6 @@ resource "aws_security_group" "Banking_Project_SG" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
-    Name = "Banking-Project-SG"
+    Name = "Final_Banking-Project-SG"
   }
 }
